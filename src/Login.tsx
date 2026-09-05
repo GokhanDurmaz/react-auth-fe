@@ -15,31 +15,27 @@ export const Login: React.FC = () => {
     setErrorMessage('');
 
     if (!username || !password) {
-      setErrorMessage('Lütfen kullanıcı adı ve şifre giriniz.');
+      setErrorMessage('Please type a username and password.');
       return;
     }
 
     try {
       setLoading(true);
 
-      // Ingress üzerindeki /api yönlendirmesini kullanarak Spring Boot backend'e istek atıyoruz
       const response = await axios.post('/api/auth/login', {
         username: username,
         password: password
       });
 
-      // Backend'den gelen JWT Token'ı saklıyoruz
       const { token } = response.data;
       localStorage.setItem('token', token);
 
-      // Başarılı giriş sonrası Dashboard'a yönlendirme
       navigate('/dashboard', { replace: true });
     } catch (error: any) {
-      // 401 Unauthorized veya hatalı giriş durumu
       if (error.response && error.response.status === 401) {
-        setErrorMessage('Kullanıcı adı veya şifre hatalı!');
+        setErrorMessage('Invalid username or password!');
       } else {
-        setErrorMessage('Sunucuya bağlanırken bir hata oluştu.');
+        setErrorMessage('An error occured while connecting to the server.');
       }
     } finally {
       setLoading(false);
@@ -58,7 +54,7 @@ export const Login: React.FC = () => {
 
       <form onSubmit={handleLogin}>
         <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Kullanıcı Adı:</label>
+          <label style={{ display: 'block', marginBottom: '5px' }}>Username:</label>
           <input
             type="text"
             value={username}
@@ -69,7 +65,7 @@ export const Login: React.FC = () => {
         </div>
 
         <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Şifre:</label>
+          <label style={{ display: 'block', marginBottom: '5px' }}>Password:</label>
           <input
             type="password"
             value={password}
@@ -92,7 +88,7 @@ export const Login: React.FC = () => {
             cursor: loading ? 'not-allowed' : 'pointer'
           }}
         >
-          {loading ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
+          {loading ? 'Signin...' : 'Signin'}
         </button>
       </form>
     </div>

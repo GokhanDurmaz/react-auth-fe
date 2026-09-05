@@ -8,15 +8,15 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Herkese Açık Rota */}
+        { }
         <Route path="/login" element={<Login />} />
 
-        {/* Korumalı Rota */}
+        { }
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>
 
-        {/* Varsayılan olarak /login'e yönlendir */}
+        { }
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>

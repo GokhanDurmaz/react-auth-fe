@@ -6,11 +6,9 @@ export const ProtectedRoute: React.FC = () => {
   const location = useLocation();
 
   if (!token) {
-    // Token yoksa doğrudan Login sayfasına yönlendirir
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Token varsa alt rotayı (Dashboard) çizer
   return <Outlet />;
 };
 
