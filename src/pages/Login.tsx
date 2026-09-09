@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -9,6 +10,7 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,8 +29,8 @@ export const Login: React.FC = () => {
         password: password
       });
 
-      const { token } = response.data;
-      localStorage.setItem('token', token);
+      const { token, user } = response.data;
+      login(token, user || { id: 1, username });
 
       navigate('/dashboard', { replace: true });
     } catch (error: any) {
@@ -91,6 +93,9 @@ export const Login: React.FC = () => {
           {loading ? 'Signin...' : 'Signin'}
         </button>
       </form>
+      <div style={{ textAlign: 'center', marginTop: '15px', fontSize: '14px' }}>
+            Don't have an account? <Link to="/register">Register</Link>
+        </div>
     </div>
   );
 };
