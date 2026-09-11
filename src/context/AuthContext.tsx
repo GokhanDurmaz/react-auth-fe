@@ -12,26 +12,36 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Başlangıçta true yapıyoruz
 
   useEffect(() => {
-    // Sayfa yenilendiğinde localStorage'dan verileri yükle
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    try {
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error('User verisi parse edilemedi', e);
+      if (storedToken) {
+        let cleanToken = storedToken;
+        if (storedToken.startsWith('"') && storedToken.endsWith('"')) {
+          try {
+            cleanToken = JSON.parse(storedToken);
+          } catch {
+            cleanToken = storedToken.replace(/^"|"$/g, '');
+          }
+        }
+        setToken(cleanToken);
       }
+
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (error) {
+      console.error('LocalStorage okuma hatası:', error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   const login = (newToken: string, newUser: User) => {

@@ -4,8 +4,8 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     const [storedValue, setStoredValue] = useState<T>(() => {
         try {
             const item = window.localStorage.getItem(key);
-            if(!item) return initialValue;
-
+            if (item === null) return initialValue;
+            
             try {
                 return JSON.parse(item);
             } catch {
@@ -22,11 +22,8 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
             const valueToStore = value instanceof Function ? value(storedValue) : value;
             setStoredValue(valueToStore);
 
-            if(typeof valueToStore === 'string') {
-                window.localStorage.setItem(key, valueToStore);
-            } else {
-                window.localStorage.setItem(key, JSON.stringify(valueToStore));
-            }
+            // Veriyi her zaman JSON formatında tutarlı bir şekilde saklayın
+            window.localStorage.setItem(key, JSON.stringify(valueToStore));
         } catch (err) {
             console.error(`Error setting localStorage key "${key}"`, err);
         }

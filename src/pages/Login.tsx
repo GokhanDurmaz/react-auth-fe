@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,7 +9,6 @@ export const Login: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate();
   const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -32,7 +31,6 @@ export const Login: React.FC = () => {
       const { token, user } = response.data;
       login(token, user || { id: 1, username });
 
-      navigate('/dashboard', { replace: true });
     } catch (error: any) {
       if (error.response && error.response.status === 401) {
         setErrorMessage('Invalid username or password!');
