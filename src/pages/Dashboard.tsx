@@ -1,10 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export const Dashboard: React.FC = () => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'settings'>('overview');
+
+  // Profile State
+  const [profileData, setProfileData] = useState({
+    username: user?.username || 'johndoe',
+    email: user?.email || 'user@example.com',
+    fullName: 'John Doe',
+    bio: 'Software Engineer & Kubernetes Enthusiast',
+  });
+
+  // Settings State
+  const [notifications, setNotifications] = useState(true);
+  const [twoFactor, setTwoFactor] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -12,76 +25,282 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-slate-100 p-6 md:p-10">
-      <div className="max-w-7xl mx-auto space-y-8">
-        
-        {/* Top Navigation Bar */}
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-6 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-wide">
-              Dashboard
-            </h1>
-            <p className="text-sm text-slate-300 mt-1">
-              Welcome back, <span className="font-semibold text-indigo-400">{user?.username || 'User'}</span>!
-            </p>
+    <div className="min-h-screen bg-slate-50 flex text-slate-800">
+      
+      {/* Sidebar Navigation */}
+      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6">
+        <div className="space-y-8">
+          <div className="flex items-center gap-3 px-2">
+            <div className="h-9 w-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md shadow-indigo-200">
+              App
+            </div>
+            <span className="font-bold text-xl text-slate-900 tracking-tight">Console</span>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-5 py-2.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-200 font-medium rounded-xl transition-all duration-200 cursor-pointer shadow-lg active:scale-95"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span>Logout</span>
-          </button>
+          <nav className="space-y-1">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer ${
+                activeTab === 'overview'
+                  ? 'bg-indigo-50 text-indigo-600 shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 00-1 1m-6 0h6" />
+              </svg>
+              Overview
+            </button>
+
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer ${
+                activeTab === 'profile'
+                  ? 'bg-indigo-50 text-indigo-600 shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Profile
+            </button>
+
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer ${
+                activeTab === 'settings'
+                  ? 'bg-indigo-50 text-indigo-600 shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Settings
+            </button>
+          </nav>
+        </div>
+
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 font-medium rounded-xl text-sm transition-all duration-200 cursor-pointer"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Logout
+        </button>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        
+        {/* Top Header */}
+        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+          <h1 className="text-xl font-bold text-slate-900 capitalize">{activeTab}</h1>
+          
+          <div className="flex items-center gap-4">
+            {/* Mobile Tab Switcher */}
+            <div className="flex md:hidden gap-1 bg-slate-100 p-1 rounded-lg">
+              <button onClick={() => setActiveTab('overview')} className={`px-2.5 py-1 text-xs font-semibold rounded ${activeTab === 'overview' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600'}`}>Overview</button>
+              <button onClick={() => setActiveTab('profile')} className={`px-2.5 py-1 text-xs font-semibold rounded ${activeTab === 'profile' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600'}`}>Profile</button>
+              <button onClick={() => setActiveTab('settings')} className={`px-2.5 py-1 text-xs font-semibold rounded ${activeTab === 'settings' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600'}`}>Settings</button>
+            </div>
+
+            <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+              <div className="h-9 w-9 bg-indigo-100 text-indigo-700 font-semibold rounded-full flex items-center justify-center text-sm">
+                {(user?.username || 'U')[0].toUpperCase()}
+              </div>
+              <span className="text-sm font-semibold text-slate-700 hidden sm:inline">{user?.username || 'User'}</span>
+            </div>
+          </div>
         </header>
 
-        {/* Quick Stats Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-lg">
-            <p className="text-sm text-slate-400 font-medium">Session Status</p>
-            <div className="flex items-center gap-3 mt-3">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-              </span>
-              <h3 className="text-xl font-semibold text-white">Active & Secure</h3>
+        {/* Tab Body */}
+        <main className="p-6 md:p-10 max-w-5xl space-y-8">
+          
+          {/* OVERVIEW TAB */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Session Status</p>
+                  <div className="flex items-center gap-3 mt-3">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </span>
+                    <h3 className="text-lg font-semibold text-slate-900">Active & Secure</h3>
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Role</p>
+                  <h3 className="text-lg font-semibold text-slate-900 mt-3">
+                    {user?.role || 'Authenticated User'}
+                  </h3>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Environment</p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <span className="px-3 py-1 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-lg text-xs font-semibold uppercase">
+                      Kubernetes Pod
+                    </span>
+                  </div>
+                </div>
+              </section>
+
+              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+                <h2 className="text-lg font-bold text-slate-900 mb-2">Workplace Overview</h2>
+                <p className="text-slate-600 leading-relaxed text-sm mb-4">
+                  Your connection to the backend API is established. All operations in this area are protected with JWT authorization headers.
+                </p>
+
+                <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-800 text-sm flex items-center gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 9a1 1 0 102 0v-4a1 1 0 10-2 0v4z" clipRule="evenodd" />
+                  </svg>
+                  <span>Tip: You can switch between Profile and Settings from the left sidebar.</span>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-lg">
-            <p className="text-sm text-slate-400 font-medium">Role</p>
-            <h3 className="text-xl font-semibold text-white mt-3">
-              {user?.role || 'Authenticated User'}
-            </h3>
-          </div>
+          {/* PROFILE TAB */}
+          {activeTab === 'profile' && (
+            <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Profile Details</h2>
+                <p className="text-sm text-slate-500">Manage your personal information and public profile.</p>
+              </div>
 
-          <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-lg">
-            <p className="text-sm text-slate-400 font-medium">Environment</p>
-            <div className="flex items-center gap-2 mt-3">
-              <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-semibold uppercase tracking-wider">
-                Kubernetes Pod
-              </span>
+              <div className="flex items-center gap-4 pb-6 border-b border-slate-100">
+                <div className="h-20 w-20 bg-indigo-600 text-white font-bold text-2xl rounded-2xl flex items-center justify-center shadow-md shadow-indigo-100">
+                  {profileData.fullName[0]}
+                </div>
+                <div>
+                  <button className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-all cursor-pointer">
+                    Change Avatar
+                  </button>
+                  <p className="text-xs text-slate-400 mt-2">JPG, GIF or PNG. Max size 2MB.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    value={profileData.fullName}
+                    onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Username</label>
+                  <input
+                    type="text"
+                    value={profileData.username}
+                    onChange={(e) => setProfileData({ ...profileData, username: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
+                  <input
+                    type="email"
+                    value={profileData.email}
+                    onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Bio</label>
+                  <textarea
+                    rows={3}
+                    value={profileData.bio}
+                    onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-100 transition-all cursor-pointer">
+                  Save Changes
+                </button>
+              </div>
             </div>
-          </div>
-        </section>
+          )}
 
-        {/* Main Content Card */}
-        <main className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 shadow-2xl">
-          <h2 className="text-xl font-semibold text-white mb-4">Workplace Overview</h2>
-          <p className="text-slate-300 leading-relaxed mb-6">
-            Your connection to the backend API is established. All operations in this area are protected with JWT authorization headers.
-          </p>
+          {/* SETTINGS TAB */}
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              {/* Account Security */}
+              <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">Security & Privacy</h2>
+                  <p className="text-sm text-slate-500">Manage your authentication methods and notification preferences.</p>
+                </div>
 
-          <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-200 text-sm flex items-center gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 9a1 1 0 102 0v-4a1 1 0 10-2 0v4z" clipRule="evenodd" />
-            </svg>
-            <span>Tip: You can expand this layout with microservices metrics or user profiles.</span>
-          </div>
+                <div className="space-y-4 divide-y divide-slate-100">
+                  <div className="flex items-center justify-between pt-4">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-800">Email Notifications</h4>
+                      <p className="text-xs text-slate-500">Receive system alerts and updates via email.</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={notifications}
+                      onChange={(e) => setNotifications(e.target.checked)}
+                      className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-800">Two-Factor Authentication (2FA)</h4>
+                      <p className="text-xs text-slate-500">Add an extra layer of security to your account.</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={twoFactor}
+                      onChange={(e) => setTwoFactor(e.target.checked)}
+                      className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Password Change Section */}
+              <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-4">
+                <h3 className="text-md font-bold text-slate-900">Change Password</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Current Password</label>
+                    <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">New Password</label>
+                    <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                </div>
+                <div className="flex justify-end pt-2">
+                  <button className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-xl transition-all cursor-pointer">
+                    Update Password
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </main>
-
       </div>
     </div>
   );
