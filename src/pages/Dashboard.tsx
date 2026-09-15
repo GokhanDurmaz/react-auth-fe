@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import axiosClient from '../api/axiosClient';
 
 export const Dashboard: React.FC = () => {
   const { logout, user } = useAuth();
@@ -9,19 +10,112 @@ export const Dashboard: React.FC = () => {
 
   // Profile State
   const [profileData, setProfileData] = useState({
-    username: user?.username || 'johndoe',
-    email: user?.email || 'user@example.com',
-    fullName: 'John Doe',
-    bio: 'Software Engineer & Kubernetes Enthusiast',
+    username: user?.username || '',
+    email: '',
+    fullName: '',
+    avatarUrl: '',
+    bio: '',
   });
+
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileStatus, setProfileStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Settings State
   const [notifications, setNotifications] = useState(true);
   const [twoFactor, setTwoFactor] = useState(false);
 
+  // Password State
+  const [passwords, setPasswords] = useState({ oldPassword: '', newPassword: '' });
+  const [passwordStatus, setPasswordStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fetchProfile = async () => {
+    setIsLoadingProfile(true);
+    try {
+      const response = await axiosClient.get('/v1/users/me');
+      setProfileData({
+        username: response.data.username || user?.username || '',
+        email: response.data.email || '',
+        fullName: response.data.fullName || '',
+        avatarUrl: response.data.avatarUrl || '',
+        bio: response.data.bio || '',
+      });
+    } catch (err: any) {
+      console.error('Failed to fetch profile:', err);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  // Fetch profile information when component mounts
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileStatus(null);
+    setIsSavingProfile(true);
+
+    try {
+      const response = await axiosClient.put('/v1/users/me', {
+        fullName: profileData.fullName,
+        email: profileData.email,
+        avatarUrl: profileData.avatarUrl,
+        bio: profileData.bio,
+      });
+
+      setProfileStatus({ type: 'success', message: 'Profile updated successfully!' });
+      
+      if (response.data) {
+        setProfileData((prev) => ({
+          ...prev,
+          ...response.data,
+        }));
+      }
+    } catch (err: any) {
+      setProfileStatus({
+        type: 'error',
+        message: err.response?.data?.message || 'An error occurred while updating the profile.',
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/login', { replace: true });
+  };
+
+  const updatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordStatus(null);
+
+    if (!passwords.oldPassword || !passwords.newPassword) {
+      setPasswordStatus({ type: 'error', message: 'Please fill in all fields.' });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await axiosClient.post('auth/change-password', {
+        oldPassword: passwords.oldPassword,
+        newPassword: passwords.newPassword,
+      });
+
+      setPasswordStatus({ type: 'success', message: response.data.message || 'Password changed successfully!' });
+      setPasswords({ oldPassword: '', newPassword: '' });
+    } catch (err: any) {
+      setPasswordStatus({ 
+        type: 'error', 
+        message: err.response?.data?.message || 'Failed to change password.' 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -109,11 +203,25 @@ export const Dashboard: React.FC = () => {
               <button onClick={() => setActiveTab('settings')} className={`px-2.5 py-1 text-xs font-semibold rounded ${activeTab === 'settings' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600'}`}>Settings</button>
             </div>
 
+            {/* Header Profile Section */}
             <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-              <div className="h-9 w-9 bg-indigo-100 text-indigo-700 font-semibold rounded-full flex items-center justify-center text-sm">
-                {(user?.username || 'U')[0].toUpperCase()}
+              <div className="h-9 w-9 bg-indigo-100 text-indigo-700 font-semibold rounded-full flex items-center justify-center text-sm overflow-hidden border border-slate-200">
+                {profileData.avatarUrl ? (
+                  <img
+                    src={profileData.avatarUrl}
+                    alt={user?.username || 'User'}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  (profileData.fullName || user?.username || 'U')[0].toUpperCase()
+                )}
               </div>
-              <span className="text-sm font-semibold text-slate-700 hidden sm:inline">{user?.username || 'User'}</span>
+              <span className="text-sm font-semibold text-slate-700 hidden sm:inline">
+                {profileData.fullName || user?.username || 'User'}
+              </span>
             </div>
           </div>
         </header>
@@ -171,72 +279,100 @@ export const Dashboard: React.FC = () => {
 
           {/* PROFILE TAB */}
           {activeTab === 'profile' && (
-            <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6">
+            <form onSubmit={handleSaveProfile} className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">Profile Details</h2>
                 <p className="text-sm text-slate-500">Manage your personal information and public profile.</p>
               </div>
 
-              <div className="flex items-center gap-4 pb-6 border-b border-slate-100">
-                <div className="h-20 w-20 bg-indigo-600 text-white font-bold text-2xl rounded-2xl flex items-center justify-center shadow-md shadow-indigo-100">
-                  {profileData.fullName[0]}
+              {profileStatus && (
+                <div className={`p-3 rounded-xl text-sm font-medium ${
+                  profileStatus.type === 'success' 
+                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' 
+                    : 'bg-rose-50 border border-rose-200 text-rose-700'
+                }`}>
+                  {profileStatus.message}
                 </div>
-                <div>
-                  <button className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-all cursor-pointer">
-                    Change Avatar
-                  </button>
-                  <p className="text-xs text-slate-400 mt-2">JPG, GIF or PNG. Max size 2MB.</p>
-                </div>
-              </div>
+              )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Full Name</label>
-                  <input
-                    type="text"
-                    value={profileData.fullName}
-                    onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  />
-                </div>
+              {isLoadingProfile ? (
+                <div className="text-center py-10 text-slate-500">Loading profile details...</div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-4 pb-6 border-b border-slate-100">
+                    <div className="h-20 w-20 bg-indigo-600 text-white font-bold text-2xl rounded-2xl flex items-center justify-center shadow-md shadow-indigo-100 overflow-hidden">
+                      {profileData.avatarUrl ? (
+                        <img src={profileData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        (profileData.fullName || profileData.username || 'U')[0].toUpperCase()
+                      )}
+                    </div>
+                    <div className="flex-1 max-w-md">
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">Avatar Image URL</label>
+                      <input
+                        type="text"
+                        placeholder="https://example.com/avatar.png"
+                        value={profileData.avatarUrl}
+                        onChange={(e) => setProfileData({ ...profileData, avatarUrl: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Username</label>
-                  <input
-                    type="text"
-                    value={profileData.username}
-                    onChange={(e) => setProfileData({ ...profileData, username: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  />
-                </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Full Name</label>
+                      <input
+                        type="text"
+                        value={profileData.fullName}
+                        onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                      />
+                    </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
-                  <input
-                    type="email"
-                    value={profileData.email}
-                    onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Username</label>
+                      <input
+                        type="text"
+                        disabled
+                        value={profileData.username}
+                        className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 text-sm cursor-not-allowed"
+                      />
+                    </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Bio</label>
-                  <textarea
-                    rows={3}
-                    value={profileData.bio}
-                    onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
-                  />
-                </div>
-              </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
+                      <input
+                        type="email"
+                        value={profileData.email}
+                        onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                      />
+                    </div>
 
-              <div className="flex justify-end gap-3 pt-4">
-                <button className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-100 transition-all cursor-pointer">
-                  Save Changes
-                </button>
-              </div>
-            </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Bio</label>
+                      <textarea
+                        rows={3}
+                        value={profileData.bio}
+                        onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4">
+                    <button
+                      type="submit"
+                      disabled={isSavingProfile}
+                      className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-indigo-400 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-100 transition-all cursor-pointer"
+                    >
+                      {isSavingProfile ? 'Saving...' : 'Save Changes'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </form>
           )}
 
           {/* SETTINGS TAB */}
@@ -279,24 +415,52 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {/* Password Change Section */}
-              <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-4">
+              <form onSubmit={updatePassword} className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-4">
                 <h3 className="text-md font-bold text-slate-900">Change Password</h3>
+
+                {passwordStatus && (
+                  <div className={`p-3 rounded-xl text-sm font-medium ${
+                    passwordStatus.type === 'success' 
+                      ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' 
+                      : 'bg-rose-50 border border-rose-200 text-rose-700'
+                  }`}>
+                    {passwordStatus.message}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1">Current Password</label>
-                    <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <input 
+                      type="password" 
+                      placeholder="••••••••" 
+                      value={passwords.oldPassword}
+                      onChange={(e) => setPasswords({ ...passwords, oldPassword: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1">New Password</label>
-                    <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <input 
+                      type="password" 
+                      placeholder="••••••••" 
+                      value={passwords.newPassword}
+                      onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                    />
                   </div>
                 </div>
+                
                 <div className="flex justify-end pt-2">
-                  <button className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-xl transition-all cursor-pointer">
-                    Update Password
+                  <button 
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white font-semibold text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2"
+                  >
+                    {isSubmitting ? 'Updating...' : 'Update Password'}
                   </button>
                 </div>
-              </div>
+              </form>
             </div>
           )}
 
