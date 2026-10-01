@@ -11,10 +11,10 @@ export const Dashboard: React.FC = () => {
   // Profile State
   const [profileData, setProfileData] = useState({
     username: user?.username || '',
-    email: '',
-    fullName: '',
-    avatarUrl: '',
-    bio: '',
+    email: user?.email || '',
+    fullName: user?.fullname || '',
+    avatarUrl: user?.avatar || '',
+    bio: user?.bio || '',
   });
 
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
